@@ -93,31 +93,28 @@ Reflect.getMetadata('methodMetaData', new SomeClass(), 'someMethod'); // 'b'
 在 Angular 2+ 的版本中，[控制反转与依赖注入](https://segmentfault.com/a/1190000008626680)便是基于此实现，现在，我们来实现一个简单版：
 
 ```ts
-type Constructor<T = any> = new (...args: any[]) => T;
+import 'reflect-metadata'
 
-const Injectable = (): ClassDecorator => target => {};
-
+type Constructor<T = any> = new (...args: any[]) => T
 class OtherService {
-  a = 1;
+    a = 1
 }
-
-@Injectable()
-class TestService {
-  constructor(public readonly otherService: OtherService) {}
-
-  testMethod() {
-    console.log(this.otherService.a);
-  }
-}
-
-const Factory = <T>(target: Constructor<T>): T => {
-  // 获取所有注入的服务
-  const providers = Reflect.getMetadata('design:paramtypes', target); // [OtherService]
-  const args = providers.map((provider: Constructor) => new provider());
-  return new target(...args);
+const Injectable = (value: any): ClassDecorator => target => { 
+    Reflect.defineMetadata("design:paramtypes",value,target)
 };
-
-Factory(TestService).testMethod(); // 1
+@Injectable(OtherService)
+class TestService {
+    constructor(public readonly otherService: OtherService) { }
+    testMethod(){
+        console.log(this.otherService.a)
+    }
+}
+const Factory = <T>(target: Constructor<T>):T=>{
+    const provider = Reflect.getMetadata("design:paramtypes",target)
+    const args = new provider()
+    return new target(args)
+}
+Factory(TestService).testMethod();
 ```
 
 ### Controller 与 Get 的实现
